@@ -761,7 +761,7 @@
         modal.addEventListener('click', (e) => { if(e.target === modal) closeModal(); });
         document.addEventListener('keydown', (e) => { if(e.key === 'Escape' && modal.classList.contains('active')) closeModal(); });
 
-        // ================= QUIZ LOGIC =================
+// ================= QUIZ LOGIC =================
         function shuffleArray(array) {
             let arr = [...array];
             for (let i = arr.length - 1; i > 0; i--) {
@@ -771,11 +771,20 @@
             return arr;
         }
 
+        // 1. Creamos un ID único de sesión al cargar la página
+        // Esto permite agrupar el Pre-Test y Post-Test de un mismo usuario.
+        const idSesion = 'estudiante_' + Math.random().toString(36).substr(2, 9);
+
         class QuizComponent {
-            constructor(containerId, isPostTest) {
+            constructor(containerId, tipoEvaluacion) {
                 this.container = document.getElementById(containerId);
-                this.collectionName = isPostTest ? 'posttest' : 'pretest';
-                this.questions = isPostTest ? shuffleArray(quizMasterData.map(q => ({...q, options: shuffleArray([...q.options])}))) : [...quizMasterData];
+                this.tipoEvaluacion = tipoEvaluacion; // Recibimos "Pre-Test" o "Post-Test"
+                
+                // Si es Post-Test, mezclamos las preguntas para que no se vea igual al Pre-Test
+                this.questions = (tipoEvaluacion === "Post-Test") 
+                    ? shuffleArray(quizMasterData.map(q => ({...q, options: shuffleArray([...q.options])}))) 
+                    : [...quizMasterData];
+                    
                 this.currentQIndex = 0;
                 this.score = 0;
                 this.userAnswers = [];
@@ -790,7 +799,8 @@
 
                 this.header = document.createElement('div');
                 this.header.className = 'quiz-header';
-                this.header.innerHTML = `<div id="progress-text-${this.collectionName}" style="font-weight:700; color:var(--c-text);"></div><div class="progress-bar"><div class="progress-fill" id="progress-fill-${this.collectionName}"></div></div>`;
+                // Usamos this.container.id para evitar conflictos de HTML entre los dos tests
+                this.header.innerHTML = `<div id="progress-text-${this.container.id}" style="font-weight:700; color:var(--c-text);"></div><div class="progress-bar"><div class="progress-fill" id="progress-fill-${this.container.id}"></div></div>`;
                 
                 this.body = document.createElement('div');
                 
@@ -811,8 +821,8 @@
             renderQuestion() {
                 if (this.currentQIndex >= this.questions.length) return this.showResults();
                 const q = this.questions[this.currentQIndex];
-                document.getElementById(`progress-text-${this.collectionName}`).textContent = `Pregunta ${this.currentQIndex + 1} de ${this.questions.length}`;
-                document.getElementById(`progress-fill-${this.collectionName}`).style.width = `${((this.currentQIndex + 1) / this.questions.length) * 100}%`;
+                document.getElementById(`progress-text-${this.container.id}`).textContent = `Pregunta ${this.currentQIndex + 1} de ${this.questions.length}`;
+                document.getElementById(`progress-fill-${this.container.id}`).style.width = `${((this.currentQIndex + 1) / this.questions.length) * 100}%`;
                 
                 this.body.innerHTML = `<div class="question-text">${q.q}</div>`;
                 const grid = document.createElement('div');
@@ -880,21 +890,24 @@
                         `).join('')}
                     </div>
 
-                    <button class="btn-primary" id="save-btn-${this.collectionName}" style="margin-top: 1rem;">
+                    <button class="btn-primary" id="save-btn-${this.container.id}" style="margin-top: 1rem;">
                         Guardar Resultado
                     </button>
-                    <p id="save-msg-${this.collectionName}" aria-live="polite" style="margin-top:1.5rem; color:var(--c-teal); font-weight:700;"></p>
+                    <p id="save-msg-${this.container.id}" aria-live="polite" style="margin-top:1.5rem; color:var(--c-teal); font-weight:700;"></p>
                 `;
 
                 if(this.score >= 5) launchConfetti();
 
-                document.getElementById(`save-btn-${this.collectionName}`).addEventListener('click', async (e) => {
+                document.getElementById(`save-btn-${this.container.id}`).addEventListener('click', async (e) => {
                     const btn = e.target;
-                    const msgEl = document.getElementById(`save-msg-${this.collectionName}`);
+                    const msgEl = document.getElementById(`save-msg-${this.container.id}`);
                     btn.disabled = true; btn.textContent = 'Guardando...';
                     
                     try {
-                        await db.collection(this.collectionName).add({ 
+                        // 2 y 3. Guardamos en la misma colección identificando tipo de test y sesión
+                        await db.collection('evaluaciones').add({ 
+                            id_sesion: idSesion,
+                            tipo_evaluacion: this.tipoEvaluacion, // Aquí es donde se diferencia el Pre del Post
                             timestamp: new Date(), 
                             puntaje: this.score, 
                             total: this.questions.length, 
@@ -913,8 +926,9 @@
             }
         }
 
-        new QuizComponent('pre-test-container', false);
-        new QuizComponent('post-test-container', true);
+        // Pasamos el texto diferenciador al instanciar las clases
+        new QuizComponent('pre-test-container', 'Pre-Test');
+        new QuizComponent('post-test-container', 'Post-Test');
 
         // ================= USABILIDAD SUBMIT =================
         formUsabilidad.addEventListener('submit', async (e) => {
