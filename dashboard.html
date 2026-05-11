@@ -2,92 +2,310 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Dashboard - Resultados Comunica Tu Sonrisa</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Admin - Comunica Tu Sonrisa</title>
+    
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    
     <style>
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8fafc; padding: 40px; text-align: center; }
-        .card { background: white; padding: 2rem; border-radius: 1.5rem; shadow: 0 10px 15px rgba(0,0,0,0.1); max-width: 800px; margin: 0 auto; }
-        h1 { color: #0f172a; }
-        .stats { display: flex; justify-content: space-around; margin: 2rem 0; }
-        .stat-box { background: #e0f2fe; padding: 1rem; border-radius: 1rem; min-width: 150px; }
-        .stat-box h3 { margin: 0; color: #0ea5e9; font-size: 2rem; }
+        :root {
+            --c-primary: #0ea5e9;
+            --c-secondary: #10b981;
+            --c-bg: #f8fafc;
+            --c-card: #ffffff;
+            --c-text-dark: #0f172a;
+            --c-text-light: #64748b;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+            background-color: var(--c-bg);
+            color: var(--c-text-dark);
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .btn-export {
+            background: var(--c-primary);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: 0.3s;
+        }
+
+        .btn-export:hover { background: #0284c7; }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: var(--c-card);
+            padding: 20px;
+            border-radius: 16px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+            text-align: center;
+        }
+
+        .stat-card p {
+            margin: 0;
+            color: var(--c-text-light);
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .stat-card h3 {
+            margin: 10px 0 0;
+            font-size: 2rem;
+            color: var(--c-primary);
+        }
+
+        .charts-container {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+        }
+
+        .chart-card {
+            background: var(--c-card);
+            padding: 25px;
+            border-radius: 20px;
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05);
+        }
+
+        .table-card {
+            background: var(--c-card);
+            margin-top: 30px;
+            padding: 20px;
+            border-radius: 16px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        th {
+            text-align: left;
+            padding: 12px;
+            border-bottom: 2px solid #f1f5f9;
+            color: var(--c-text-light);
+            font-size: 0.85rem;
+        }
+
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #f1f5f9;
+            font-size: 0.9rem;
+        }
+
+        .badge {
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+
+        .badge-pre { background: #e0f2fe; color: #0369a1; }
+        .badge-post { background: #dcfce7; color: #15803d; }
+
+        @media (max-width: 768px) {
+            .charts-container { grid-template-columns: 1fr; }
+            header { flex-direction: column; text-align: center; gap: 15px; }
+        }
     </style>
 </head>
 <body>
 
-    <div class="card">
-        <h1>Resultados del Proyecto</h1>
-        <div class="stats">
-            <div class="stat-box"><p>Participantes</p><h3 id="total-p">0</h3></div>
-            <div class="stat-box"><p>Mejora Promedio</p><h3 id="mejora">0%</h3></div>
+<div class="container">
+    <header>
+        <div>
+            <h1 style="margin:0; letter-spacing:-0.03em;">Dashboard de Impacto</h1>
+            <p style="color:var(--c-text-light); margin:5px 0 0;">Análisis de aprendizaje en tiempo real - Comunica Tu Sonrisa</p>
         </div>
-        <canvas id="graficaResultados"></canvas>
+        <button class="btn-export" onclick="exportarCSV()">Descargar Datos (CSV)</button>
+    </header>
+
+    <div class="stats-grid">
+        <div class="stat-card">
+            <p>Total Evaluaciones</p>
+            <h3 id="total-ev">0</h3>
+        </div>
+        <div class="stat-card">
+            <p>Usuarios Únicos</p>
+            <h3 id="total-u">0</h3>
+        </div>
+        <div class="stat-card">
+            <p>Mejora de Conocimiento</p>
+            <h3 id="mejora-porcentual">0%</h3>
+        </div>
     </div>
 
-    <script>
-        // MISMA CONFIGURACIÓN DE TU FIREBASE
-        const firebaseConfig = {
-            apiKey: "AIzaSyBL5PnoKNUnqInUZaZgNDzuqoPy44hitYc",
-            authDomain: "comunica-tu-sonrisa.firebaseapp.com",
-            projectId: "comunica-tu-sonrisa",
-            storageBucket: "comunica-tu-sonrisa.firebasestorage.app",
-            messagingSenderId: "31365340506",
-            appId: "1:31365340506:web:379b352133cb2759ab2763"
-        };
-        
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
+    <div class="charts-container">
+        <div class="chart-card">
+            <h4 style="margin-top:0;">Comparativa de Conocimiento (Promedios)</h4>
+            <canvas id="barChart"></canvas>
+        </div>
+        <div class="chart-card">
+            <h4 style="margin-top:0;">Participación</h4>
+            <canvas id="pieChart"></canvas>
+        </div>
+    </div>
 
-        async function cargarDatos() {
-            const snapshot = await db.collection('evaluaciones').get();
-            let preTotal = 0, preCount = 0;
-            let postTotal = 0, postCount = 0;
-            let usuarios = new Set();
+    <div class="table-card">
+        <h4 style="margin:0 0 10px;">Bitácora de Respuestas</h4>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Fecha y Hora</th>
+                        <th>ID Estudiante</th>
+                        <th>Tipo de Test</th>
+                        <th>Resultado</th>
+                    </tr>
+                </thead>
+                <tbody id="tabla-body"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
 
-            snapshot.forEach(doc => {
-                const data = doc.data();
-                usuarios.add(data.id_sesion);
-                if(data.tipo_evaluacion === "Pre-Test") {
-                    preTotal += data.puntaje;
-                    preCount++;
-                } else {
-                    postTotal += data.puntaje;
-                    postCount++;
-                }
-            });
+<script>
+    const firebaseConfig = {
+        apiKey: "AIzaSyBL5PnoKNUnqInUZaZgNDzuqoPy44hitYc",
+        authDomain: "comunica-tu-sonrisa.firebaseapp.com",
+        projectId: "comunica-tu-sonrisa",
+        storageBucket: "comunica-tu-sonrisa.firebasestorage.app",
+        messagingSenderId: "31365340506",
+        appId: "1:31365340506:web:379b352133cb2759ab2763"
+    };
+    
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
 
-            const avgPre = preCount > 0 ? (preTotal / preCount).toFixed(1) : 0;
-            const avgPost = postCount > 0 ? (postTotal / postCount).toFixed(1) : 0;
-            const mejora = avgPre > 0 ? (((avgPost - avgPre) / avgPre) * 100).toFixed(0) : 0;
+    let chartBar = null;
+    let chartPie = null;
+    let datosCompletos = [];
 
-            document.getElementById('total-p').textContent = usuarios.size;
-            document.getElementById('mejora').textContent = `+${mejora}%`;
+    db.collection('evaluaciones').orderBy('timestamp', 'desc').onSnapshot((snapshot) => {
+        let preSum = 0, preCount = 0, postSum = 0, postCount = 0;
+        let usuarios = new Set();
+        let htmlTabla = '';
+        datosCompletos = [];
 
-            renderChart(avgPre, avgPost);
-        }
+        snapshot.forEach(doc => {
+            const d = doc.data();
+            datosCompletos.push(d);
+            usuarios.add(d.id_sesion);
 
-        function renderChart(pre, post) {
-            const ctx = document.getElementById('graficaResultados').getContext('2d');
-            new Chart(ctx, {
+            if(d.tipo_evaluacion === "Pre-Test") { preSum += d.puntaje; preCount++; }
+            else { postSum += d.puntaje; postCount++; }
+
+            const fecha = d.timestamp ? d.timestamp.toDate().toLocaleString('es-SV') : 'Guardando...';
+
+            htmlTabla += `
+                <tr>
+                    <td>${fecha}</td>
+                    <td style="font-family:monospace; font-size:0.75rem; color:#6366f1;">${d.id_sesion}</td>
+                    <td><span class="badge ${d.tipo_evaluacion === 'Pre-Test' ? 'badge-pre' : 'badge-post'}">${d.tipo_evaluacion}</span></td>
+                    <td><strong>${d.puntaje} / 7</strong></td>
+                </tr>`;
+        });
+
+        document.getElementById('total-ev').textContent = snapshot.size;
+        document.getElementById('total-u').textContent = usuarios.size;
+        document.getElementById('tabla-body').innerHTML = htmlTabla;
+
+        const avgPre = preCount > 0 ? (preSum / preCount).toFixed(1) : 0;
+        const avgPost = postCount > 0 ? (postSum / postCount).toFixed(1) : 0;
+        const mejora = avgPre > 0 ? (((avgPost - avgPre) / avgPre) * 100).toFixed(0) : 0;
+        document.getElementById('mejora-porcentual').textContent = `+${mejora}%`;
+
+        actualizarGraficas(avgPre, avgPost, preCount, postCount);
+    });
+
+    function actualizarGraficas(pre, post, nPre, nPost) {
+        if(chartBar) {
+            chartBar.data.datasets[0].data = [pre, post];
+            chartBar.update();
+        } else {
+            const ctxBar = document.getElementById('barChart').getContext('2d');
+            chartBar = new Chart(ctxBar, {
                 type: 'bar',
                 data: {
-                    labels: ['Antes de los videos (Pre)', 'Después de los videos (Post)'],
+                    labels: ['Evaluación Inicial (Pre)', 'Evaluación Final (Post)'],
                     datasets: [{
-                        label: 'Puntaje Promedio (sobre 7)',
+                        label: 'Puntaje Promedio',
                         data: [pre, post],
                         backgroundColor: ['#0ea5e9', '#10b981'],
-                        borderRadius: 10
+                        borderRadius: 12,
+                        barThickness: 60
                     }]
                 },
-                options: {
-                    scales: { y: { beginAtZero: true, max: 7 } }
+                options: { 
+                    responsive: true,
+                    scales: { y: { beginAtZero: true, max: 7 } },
+                    plugins: { legend: { display: false } }
                 }
             });
         }
 
-        cargarDatos();
-    </script>
+        if(chartPie) {
+            chartPie.data.datasets[0].data = [nPre, nPost];
+            chartPie.update();
+        } else {
+            const ctxPie = document.getElementById('pieChart').getContext('2d');
+            chartPie = new Chart(ctxPie, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Completaron Pre', 'Completaron Post'],
+                    datasets: [{ data: [nPre, nPost], backgroundColor: ['#cbd5e1', '#0ea5e9'], borderWidth: 0 }]
+                },
+                options: { cutout: '70%', plugins: { legend: { position: 'bottom' } } }
+            });
+        }
+    }
+
+    function exportarCSV() {
+        if(datosCompletos.length === 0) return alert("No hay datos");
+        let csv = "Fecha,ID_Sesion,Tipo_Evaluacion,Puntaje_Obtenido,Total_Preguntas\\n";
+        datosCompletos.forEach(d => {
+            const fecha = d.timestamp ? d.timestamp.toDate().toISOString() : "";
+            csv += `"${fecha}","${d.id_sesion}","${d.tipo_evaluacion}",${d.puntaje},7\\n`;
+        });
+        const blob = new Blob(["\\ufeff" + csv], { type: 'text/csv;charset=utf-8;' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = 'datos_evaluacion_odontologia.csv';
+        a.click();
+    }
+</script>
 </body>
 </html>
