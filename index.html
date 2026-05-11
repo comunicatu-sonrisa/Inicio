@@ -25,6 +25,10 @@
             --c-green-light: #d1fae5;
             --c-red: #ef4444;
             --c-text: #475569;
+            /* Nuevos colores clínicos para los Módulos */
+            --c-mint: #e2f9f0;
+            --c-pink: #ffdae9;
+            
             --font-main: 'Plus Jakarta Sans', sans-serif;
             --transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
             --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
@@ -69,10 +73,7 @@
             position: fixed; width: 100%; top: 0; z-index: 100;
             background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
             border-bottom: 1px solid rgba(255,255,255,0.3); padding: 1rem 0; transition: var(--transition);
-            /* Optimización GPU */
-            transform: translate3d(0,0,0);
-            backface-visibility: hidden;
-            -webkit-backface-visibility: hidden;
+            transform: translate3d(0,0,0); backface-visibility: hidden; -webkit-backface-visibility: hidden;
         }
         .nav-container { display: flex; justify-content: space-between; align-items: center; }
         .logo { font-size: 1.25rem; font-weight: 800; color: var(--c-navy); display: flex; align-items: center; gap: 0.75rem; letter-spacing: -0.02em; }
@@ -121,7 +122,6 @@
         .hero-visual-bg {
             position: absolute; width: 80%; height: 80%; background: linear-gradient(135deg, var(--c-teal-light) 0%, #ffffff 100%);
             border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%; animation: morph 8s ease-in-out infinite; z-index: 1;
-            /* Optimización GPU segura (sin contain: layout paint para evitar recortes) */
             will-change: border-radius;
         }
         @keyframes morph {
@@ -132,15 +132,9 @@
             position: relative; z-index: 2; background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
             border: 1px solid rgba(255,255,255,0.5); border-radius: 2rem; padding: 2rem; width: 80%;
             box-shadow: var(--shadow-lg); transition: var(--transition);
-            /* Optimización GPU con rotación combinada */
-            transform: rotate(-2deg) translateZ(0);
-            backface-visibility: hidden;
-            -webkit-backface-visibility: hidden;
+            transform: rotate(-2deg) translateZ(0); backface-visibility: hidden; -webkit-backface-visibility: hidden;
         }
-        .hero-glass-card:hover { 
-            /* Se mantiene el translateZ(0) para no perder aceleración al hacer hover */
-            transform: rotate(0deg) translateY(-10px) translateZ(0); 
-        }
+        .hero-glass-card:hover { transform: rotate(0deg) translateY(-10px) translateZ(0); }
         .glass-header { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; }
         .glass-dot { width: 10px; height: 10px; border-radius: 50%; background: #e2e8f0; }
         .glass-dot:nth-child(1) { background: #fecaca; }
@@ -207,7 +201,7 @@
         .summary-item.bad { border-color: var(--c-red); background: #fee2e2; color: #7f1d1d; }
         .summary-item strong { display: block; margin-bottom: 0.25rem; color: var(--c-navy); }
 
-        /* ================= TOPICS GRID ================= */
+        /* ================= TOPICS GRID CON NUEVO DISEÑO ================= */
         .topics-section { padding: 8rem 0; background: var(--c-white); }
         .section-header { text-align: center; margin-bottom: 5rem; max-width: 600px; margin-inline: auto; }
         .section-header h2 { font-size: 2.5rem; margin-bottom: 1rem; letter-spacing: -0.02em; }
@@ -216,21 +210,43 @@
         .topics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2.5rem; counter-reset: topic-counter; }
         
         .topic-card {
-            background: var(--c-bg); border-radius: var(--radius); padding: 2.5rem; position: relative;
-            transition: var(--transition); border: 1px solid rgba(0,0,0,0.02); cursor: pointer; display: flex; flex-direction: column;
-            overflow: hidden; text-align: left;
+            background: var(--c-white); 
+            border-radius: var(--radius); 
+            padding: 2.5rem; 
+            position: relative;
+            transition: var(--transition); 
+            border-bottom: 5px solid var(--c-teal); /* Borde azul inferior */
+            box-shadow: var(--shadow-sm); 
+            cursor: pointer; 
+            display: flex; 
+            flex-direction: column;
+            overflow: hidden; 
+            text-align: left;
         }
+        
         .topic-card::before {
             counter-increment: topic-counter; content: "0" counter(topic-counter); position: absolute;
             top: -5px; right: 15px; font-size: 8rem; font-weight: 800; color: rgba(0,0,0,0.02); line-height: 1; transition: var(--transition);
         }
-        .topic-card:hover { transform: translateY(-8px); background: var(--c-white); box-shadow: var(--shadow-lg); border-color: rgba(14,165,233,0.1); }
+        
+        /* Hover Effect: cambia a rosado y se eleva */
+        .topic-card:hover { 
+            transform: translateY(-8px); 
+            box-shadow: var(--shadow-lg); 
+            border-bottom-color: var(--c-pink); 
+        }
+        
         .topic-card:hover::before { color: rgba(14,165,233,0.05); transform: scale(1.1); right: 5px; }
         
+        /* Icono redondeado color menta */
         .topic-icon {
-            width: 56px; height: 56px; background: var(--c-white); border-radius: 1rem; box-shadow: var(--shadow-sm);
-            display: flex; align-items: center; justify-content: center; margin-bottom: 2rem; z-index: 1; position: relative; color: var(--c-teal);
+            width: 64px; height: 64px; 
+            background: var(--c-mint); 
+            border-radius: 50%; 
+            display: flex; align-items: center; justify-content: center; 
+            margin-bottom: 2rem; z-index: 1; position: relative; color: var(--c-teal);
         }
+        
         .topic-icon svg { width: 28px; height: 28px; stroke-width: 2; }
         
         .topic-card h3 { font-size: 1.35rem; margin-bottom: 1rem; z-index: 1; position: relative; }
@@ -238,9 +254,9 @@
         .topic-action { color: var(--c-teal); font-weight: 700; font-size: 0.95rem; display: flex; align-items: center; gap: 0.5rem; z-index: 1; position: relative; }
 
         /* Tarjeta Usabilidad (#8) */
-        .usability-card { background: var(--c-navy); color: var(--c-white); cursor: default; border: none; }
+        .usability-card { background: var(--c-navy); color: var(--c-white); cursor: default; border-bottom: none; }
         .usability-card::before { display: none; }
-        .usability-card:hover { transform: none; box-shadow: var(--shadow-md); background: var(--c-navy); }
+        .usability-card:hover { transform: none; box-shadow: var(--shadow-md); border-bottom: none; }
         .usability-card h3 { color: var(--c-white); margin-bottom: 2rem; }
         .usability-item { margin-bottom: 1.5rem; }
         .usability-item p { margin-bottom: 0.75rem; color: #94a3b8; font-size: 0.9rem; font-weight: 500; }
@@ -260,10 +276,7 @@
             position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.6);
             backdrop-filter: blur(8px); z-index: 1000; display: flex; align-items: center; justify-content: center;
             opacity: 0; visibility: hidden; transition: var(--transition); padding: 1rem;
-            /* Optimización GPU */
-            will-change: opacity, visibility;
-            backface-visibility: hidden;
-            -webkit-backface-visibility: hidden;
+            will-change: opacity, visibility; backface-visibility: hidden; -webkit-backface-visibility: hidden;
         }
         .modal-overlay.active { opacity: 1; visibility: visible; }
         
@@ -276,7 +289,7 @@
         
         .modal-header { padding: 2.5rem 2.5rem 1.5rem; display: flex; justify-content: space-between; align-items: center; }
         .modal-header-text { display: flex; align-items: center; gap: 1rem; }
-        .modal-header-text .topic-icon { margin: 0; width: 48px; height: 48px; }
+        .modal-header-text .topic-icon { margin: 0; width: 56px; height: 56px; }
         .modal-title { font-size: 1.75rem; letter-spacing: -0.02em; }
         .btn-close {
             width: 44px; height: 44px; background: var(--c-bg); border-radius: 50%; display: flex;
@@ -407,7 +420,7 @@
                         <div class="glass-dot"></div><div class="glass-dot"></div><div class="glass-dot"></div>
                     </div>
                     <div class="glass-body">
-                        <video controls preload="metadata" style="width: 100%; height: 100%; object-fit: cover; border-radius: inherit; outline: none; background: var(--c-navy);">
+                        <video id="hero-video" controls preload="metadata" style="width: 100%; height: 100%; object-fit: cover; border-radius: inherit; outline: none; background: var(--c-navy);">
                             <source src="videos/Bienvenida.mp4" type="video/mp4">
                             Tu navegador no soporta el tag de video.
                         </video>
@@ -426,7 +439,7 @@
             <div class="container">
                 <div class="quiz-card" id="pre-test-container">
                     <div class="quiz-badge">PRE-TEST</div>
-                    </div>
+                </div>
             </div>
         </section>
 
@@ -501,7 +514,7 @@
             <div class="container">
                 <div class="quiz-card" id="post-test-container">
                     <div class="quiz-badge" style="background:var(--c-green)">POST-TEST</div>
-                    </div>
+                </div>
             </div>
         </section>
     </main>
@@ -566,12 +579,13 @@
     <script>
         // ================= FIREBASE CONFIG =================
         const firebaseConfig = {
-            apiKey: "YOUR_API_KEY",
-            authDomain: "YOUR_PROJECT.firebaseapp.com",
-            projectId: "YOUR_PROJECT_ID",
-            storageBucket: "YOUR_PROJECT.appspot.com",
-            messagingSenderId: "YOUR_SENDER_ID",
-            appId: "YOUR_APP_ID"
+            apiKey: "AIzaSyBL5PnoKNUnqInUZaZgNDzuqoPy44hitYc",
+            authDomain: "comunica-tu-sonrisa.firebaseapp.com",
+            projectId: "comunica-tu-sonrisa",
+            storageBucket: "comunica-tu-sonrisa.firebasestorage.app",
+            messagingSenderId: "31365340506",
+            appId: "1:31365340506:web:379b352133cb2759ab2763",
+            measurementId: "G-V99DBHW00Q"
         };
         
         if (!firebase.apps.length) {
@@ -761,7 +775,6 @@
             constructor(containerId, isPostTest) {
                 this.container = document.getElementById(containerId);
                 this.collectionName = isPostTest ? 'posttest' : 'pretest';
-                // Mezcla avanzada de POST-TEST (preguntas y opciones)
                 this.questions = isPostTest ? shuffleArray(quizMasterData.map(q => ({...q, options: shuffleArray([...q.options])}))) : [...quizMasterData];
                 this.currentQIndex = 0;
                 this.score = 0;
@@ -847,14 +860,12 @@
                 this.header.style.display = 'none'; this.body.style.display = 'none'; this.footer.style.display = 'none';
                 this.resultsArea.style.display = 'block';
                 
-                // Mensajes motivacionales dinámicos
                 let msg = '';
                 if(this.score === 7){ msg = '¡Perfecto! Dominas los conceptos principales de salud bucal.'; }
                 else if(this.score >= 5){ msg = 'Muy bien. Tienes buenos conocimientos de cuidado odontológico.'; }
                 else if(this.score >= 3){ msg = 'Buen intento. Te invitamos a revisar los módulos para reforzar conceptos.'; }
                 else{ msg = 'Te recomendamos explorar los módulos detalladamente nuevamente.'; }
 
-                // Resumen de resultados completo
                 this.resultsArea.innerHTML = `
                     <div class="score-circle">${this.score}/${this.questions.length}</div>
                     <h3 style="font-size:1.75rem; margin-bottom:1rem; letter-spacing:-0.02em;">Prueba Completada</h3>
@@ -877,7 +888,6 @@
 
                 if(this.score >= 5) launchConfetti();
 
-                // Guardado Firebase Completo
                 document.getElementById(`save-btn-${this.collectionName}`).addEventListener('click', async (e) => {
                     const btn = e.target;
                     const msgEl = document.getElementById(`save-msg-${this.collectionName}`);
@@ -935,6 +945,38 @@
                 btn.disabled = false; btn.textContent = 'Intentar de nuevo'; msgEl.classList.remove('sr-only'); msgEl.style.color = '#fca5a5'; msgEl.textContent = 'Error de conexión con Firebase.';
             }
         });
+
+        // ================= CONTROL DE VIDEO HERO (PAUSA AUTOMÁTICA) =================
+        const heroVideo = document.getElementById('hero-video');
+        let videoIniciado = false;
+
+        // 1. Detectamos si el usuario le dio play manualmente al menos una vez
+        if (heroVideo) {
+            heroVideo.addEventListener('play', () => {
+                videoIniciado = true;
+            });
+            
+            // 2. Creamos el observador para ver si el video está en pantalla
+            const videoObserver = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (!entry.isIntersecting) {
+                        // Si el video sale de la vista, lo pausamos
+                        heroVideo.pause();
+                    } else {
+                        // Si el video vuelve a la vista Y el usuario ya lo estaba viendo, lo reanudamos
+                        if (videoIniciado) {
+                            heroVideo.play().catch(e => console.log("Esperando interacción"));
+                        }
+                    }
+                });
+            }, { 
+                threshold: 0.3 // Se activará cuando quede menos del 30% del video visible
+            });
+
+            // 3. Ponemos al observador a vigilar el video
+            videoObserver.observe(heroVideo);
+        }
+
     </script>
 </body>
 </html>
