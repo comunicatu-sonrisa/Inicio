@@ -1,0 +1,940 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Comunica Tu Sonrisa - Salud Bucal Inclusiva</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
+    <style>
+        /* ================= VARIABLES ================= */
+        :root {
+            --c-white: #ffffff;
+            --c-bg: #f8fafc;
+            --c-navy: #0f172a;
+            --c-navy-light: #1e293b;
+            --c-teal: #0ea5e9;
+            --c-teal-light: #e0f2fe;
+            --c-green: #10b981;
+            --c-green-light: #d1fae5;
+            --c-red: #ef4444;
+            --c-text: #475569;
+            --font-main: 'Plus Jakarta Sans', sans-serif;
+            --transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+            --radius: 1.5rem;
+        }
+
+        /* ================= RESET & BASE ================= */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; }
+        body {
+            font-family: var(--font-main);
+            color: var(--c-text);
+            background-color: var(--c-bg);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+        h1, h2, h3, h4 { color: var(--c-navy); line-height: 1.2; font-weight: 700; }
+        a { text-decoration: none; color: inherit; }
+        ul { list-style: none; }
+        button { font-family: inherit; cursor: pointer; border: none; background: none; }
+        img, video { max-width: 100%; height: auto; display: block; border-radius: 0.5rem; }
+
+        /* Accesibilidad: Skip Link & Focus */
+        .skip-link {
+            position: absolute; top: -50px; left: 0; background: var(--c-teal); color: white;
+            padding: 12px 24px; z-index: 1000; transition: top 0.3s; font-weight: 600; border-radius: 0 0 1rem 0;
+        }
+        .skip-link:focus { top: 0; }
+        .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border-width: 0; }
+        *:focus-visible { outline: 3px solid var(--c-teal); outline-offset: 2px; border-radius: 4px; }
+
+        .container { width: 90%; max-width: 1200px; margin: 0 auto; }
+
+        /* ================= SCROLL REVEAL ANIMATIONS ================= */
+        .reveal { opacity: 0; transform: translateY(40px); transition: all 0.8s cubic-bezier(0.5, 0, 0, 1); }
+        .reveal.visible { opacity: 1; transform: translateY(0); }
+
+        /* ================= NAV & OVERLAY ================= */
+        nav {
+            position: fixed; width: 100%; top: 0; z-index: 100;
+            background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+            border-bottom: 1px solid rgba(255,255,255,0.3); padding: 1rem 0; transition: var(--transition);
+            /* Optimización GPU */
+            transform: translate3d(0,0,0);
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+        }
+        .nav-container { display: flex; justify-content: space-between; align-items: center; }
+        .logo { font-size: 1.25rem; font-weight: 800; color: var(--c-navy); display: flex; align-items: center; gap: 0.75rem; letter-spacing: -0.02em; }
+        .logo svg { color: var(--c-teal); width: 28px; height: 28px; flex-shrink: 0; }
+        .nav-links { display: flex; gap: 2.5rem; }
+        .nav-links a { font-weight: 600; font-size: 0.95rem; color: var(--c-text); transition: var(--transition); }
+        .nav-links a:hover { color: var(--c-teal); }
+        .hamburger { display: none; width: 24px; height: 24px; color: var(--c-navy); z-index: 101; position: relative; }
+        
+        .nav-overlay {
+            position: fixed; inset: 0; background: rgba(15, 23, 42, 0.5); backdrop-filter: blur(4px);
+            opacity: 0; visibility: hidden; transition: 0.3s ease; z-index: 90;
+        }
+        .nav-overlay.active { opacity: 1; visibility: visible; }
+
+        /* ================= HERO PREMIUM ================= */
+        .hero {
+            padding: 10rem 0 8rem; position: relative; background-color: var(--c-bg);
+            overflow: hidden;
+            background-image: radial-gradient(circle at 1px 1px, rgba(15,23,42,0.08) 1px, transparent 0);
+            background-size: 24px 24px;
+        }
+        .hero::before {
+            content: ''; position: absolute; top: -20%; left: -10%; width: 600px; height: 600px;
+            background: radial-gradient(circle, rgba(14,165,233,0.15) 0%, rgba(255,255,255,0) 70%); border-radius: 50%; z-index: 0;
+        }
+        .hero::after {
+            content: ''; position: absolute; bottom: -10%; right: -5%; width: 500px; height: 500px;
+            background: radial-gradient(circle, rgba(16,185,129,0.15) 0%, rgba(255,255,255,0) 70%); border-radius: 50%; z-index: 0;
+        }
+        
+        .hero-grid { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 5rem; align-items: center; position: relative; z-index: 1; }
+        .hero-text h1 { font-size: clamp(3rem, 5vw, 4.5rem); margin-bottom: 1.5rem; letter-spacing: -0.03em; }
+        .hero-text h1 span { color: var(--c-teal); position: relative; }
+        .hero-text p { font-size: 1.125rem; margin-bottom: 2.5rem; color: var(--c-text); max-width: 500px; line-height: 1.8; }
+        
+        .btn-primary {
+            display: inline-flex; align-items: center; gap: 0.75rem; background: var(--c-teal); color: var(--c-white);
+            padding: 1rem 2.5rem; border-radius: 3rem; font-weight: 600; font-size: 1rem; transition: var(--transition);
+            box-shadow: 0 10px 20px -10px rgba(14, 165, 233, 0.5);
+        }
+        .btn-primary:hover { transform: translateY(-3px); box-shadow: 0 15px 25px -10px rgba(14, 165, 233, 0.6); background: #0284c7; }
+
+        /* Composición Visual Hero */
+        .hero-visual { position: relative; width: 100%; aspect-ratio: 1; display: flex; align-items: center; justify-content: center; }
+        .hero-visual-bg {
+            position: absolute; width: 80%; height: 80%; background: linear-gradient(135deg, var(--c-teal-light) 0%, #ffffff 100%);
+            border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%; animation: morph 8s ease-in-out infinite; z-index: 1;
+            /* Optimización GPU segura (sin contain: layout paint para evitar recortes) */
+            will-change: border-radius;
+        }
+        @keyframes morph {
+            0%, 100% { border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%; }
+            50% { border-radius: 70% 30% 30% 70% / 70% 70% 30% 30%; }
+        }
+        .hero-glass-card {
+            position: relative; z-index: 2; background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.5); border-radius: 2rem; padding: 2rem; width: 80%;
+            box-shadow: var(--shadow-lg); transition: var(--transition);
+            /* Optimización GPU con rotación combinada */
+            transform: rotate(-2deg) translateZ(0);
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+        }
+        .hero-glass-card:hover { 
+            /* Se mantiene el translateZ(0) para no perder aceleración al hacer hover */
+            transform: rotate(0deg) translateY(-10px) translateZ(0); 
+        }
+        .glass-header { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; }
+        .glass-dot { width: 10px; height: 10px; border-radius: 50%; background: #e2e8f0; }
+        .glass-dot:nth-child(1) { background: #fecaca; }
+        .glass-dot:nth-child(2) { background: #fef08a; }
+        .glass-dot:nth-child(3) { background: #bbf7d0; }
+        .glass-body { aspect-ratio: 16/9; background: var(--c-navy); border-radius: 1rem; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; }
+        .hero-badge {
+            position: absolute; bottom: 20%; right: 0; z-index: 3; background: var(--c-white); padding: 1rem 1.5rem;
+            border-radius: 1rem; box-shadow: var(--shadow-md); display: flex; align-items: center; gap: 1rem;
+            font-weight: 700; color: var(--c-navy); transform: translateX(20%);
+        }
+        .hero-badge svg { color: var(--c-green); width: 24px; height: 24px; }
+
+        /* ================= QUIZ SECTION ================= */
+        .quiz-section { padding: 6rem 0; position: relative; }
+        .bg-navy { background-color: var(--c-navy); color: var(--c-white); }
+        .bg-navy h2 { color: var(--c-white); }
+        .bg-green { background-color: var(--c-green); color: var(--c-white); }
+        .bg-green h2 { color: var(--c-white); }
+        
+        .quiz-card {
+            background: var(--c-white); color: var(--c-navy); border-radius: var(--radius);
+            padding: 4rem 3rem; max-width: 720px; margin: 0 auto; box-shadow: var(--shadow-lg); position: relative; z-index: 10;
+        }
+        .quiz-badge {
+            position: absolute; top: -16px; left: 50%; transform: translateX(-50%);
+            background: var(--c-teal); color: white; padding: 0.5rem 2rem; border-radius: 2rem; font-weight: 800; font-size: 0.875rem; letter-spacing: 1.5px;
+        }
+        .quiz-header { margin-bottom: 2.5rem; text-align: center; }
+        .progress-bar { width: 100%; height: 6px; background: var(--c-bg); border-radius: 3px; margin-top: 1.5rem; overflow: hidden; }
+        .progress-fill { height: 100%; background: var(--c-teal); width: 0%; transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+        .question-text { font-size: 1.35rem; font-weight: 700; margin-bottom: 2rem; text-align: center; line-height: 1.4; }
+        
+        .options-grid { display: grid; gap: 1rem; }
+        .option-btn {
+            background: var(--c-bg); border: 2px solid transparent; padding: 1.25rem 1.5rem; border-radius: 1rem;
+            font-size: 1.05rem; font-weight: 500; color: var(--c-navy); text-align: left; transition: var(--transition); width: 100%;
+            display: flex; align-items: center; justify-content: space-between;
+        }
+        .option-btn svg { width: 20px; height: 20px; opacity: 0; transition: var(--transition); flex-shrink: 0; margin-left: 1rem; }
+        .option-btn:hover:not(:disabled) { background: var(--c-white); border-color: var(--c-teal); box-shadow: var(--shadow-sm); transform: translateY(-2px); }
+        .option-btn.correct { background: var(--c-green-light); border-color: var(--c-green); color: #064e3b; }
+        .option-btn.correct svg { opacity: 1; color: var(--c-green); }
+        .option-btn.incorrect { background: #fee2e2; border-color: var(--c-red); color: #7f1d1d; }
+        .option-btn.incorrect svg { opacity: 1; color: var(--c-red); }
+        
+        .quiz-footer { margin-top: 2.5rem; text-align: right; min-height: 48px; }
+        .btn-next {
+            background: var(--c-navy); color: white; padding: 1rem 2.5rem; border-radius: 2rem; font-weight: 600;
+            opacity: 0; visibility: hidden; transform: translateY(10px); transition: var(--transition); display: inline-flex; align-items: center; gap: 0.5rem;
+        }
+        .btn-next.visible { opacity: 1; visibility: visible; transform: translateY(0); }
+        .btn-next:hover { background: var(--c-navy-light); }
+        
+        .quiz-results { text-align: center; display: none; }
+        .score-circle {
+            width: 140px; height: 140px; border-radius: 50%; background: var(--c-teal-light); color: var(--c-teal);
+            display: flex; align-items: center; justify-content: center; font-size: 3rem; font-weight: 800; margin: 0 auto 2rem;
+            border: 8px solid white; box-shadow: var(--shadow-md);
+        }
+        .results-summary { text-align: left; margin: 2rem 0; display: flex; flex-direction: column; gap: 0.75rem; max-height: 300px; overflow-y: auto; padding-right: 0.5rem; }
+        .summary-item { padding: 1rem; border-radius: 0.75rem; font-size: 0.95rem; border-left: 4px solid transparent; background: var(--c-bg); }
+        .summary-item.ok { border-color: var(--c-green); background: var(--c-green-light); color: #064e3b; }
+        .summary-item.bad { border-color: var(--c-red); background: #fee2e2; color: #7f1d1d; }
+        .summary-item strong { display: block; margin-bottom: 0.25rem; color: var(--c-navy); }
+
+        /* ================= TOPICS GRID ================= */
+        .topics-section { padding: 8rem 0; background: var(--c-white); }
+        .section-header { text-align: center; margin-bottom: 5rem; max-width: 600px; margin-inline: auto; }
+        .section-header h2 { font-size: 2.5rem; margin-bottom: 1rem; letter-spacing: -0.02em; }
+        .section-header p { color: var(--c-text); font-size: 1.125rem; }
+        
+        .topics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2.5rem; counter-reset: topic-counter; }
+        
+        .topic-card {
+            background: var(--c-bg); border-radius: var(--radius); padding: 2.5rem; position: relative;
+            transition: var(--transition); border: 1px solid rgba(0,0,0,0.02); cursor: pointer; display: flex; flex-direction: column;
+            overflow: hidden; text-align: left;
+        }
+        .topic-card::before {
+            counter-increment: topic-counter; content: "0" counter(topic-counter); position: absolute;
+            top: -5px; right: 15px; font-size: 8rem; font-weight: 800; color: rgba(0,0,0,0.02); line-height: 1; transition: var(--transition);
+        }
+        .topic-card:hover { transform: translateY(-8px); background: var(--c-white); box-shadow: var(--shadow-lg); border-color: rgba(14,165,233,0.1); }
+        .topic-card:hover::before { color: rgba(14,165,233,0.05); transform: scale(1.1); right: 5px; }
+        
+        .topic-icon {
+            width: 56px; height: 56px; background: var(--c-white); border-radius: 1rem; box-shadow: var(--shadow-sm);
+            display: flex; align-items: center; justify-content: center; margin-bottom: 2rem; z-index: 1; position: relative; color: var(--c-teal);
+        }
+        .topic-icon svg { width: 28px; height: 28px; stroke-width: 2; }
+        
+        .topic-card h3 { font-size: 1.35rem; margin-bottom: 1rem; z-index: 1; position: relative; }
+        .topic-card p { font-size: 0.95rem; color: var(--c-text); flex-grow: 1; z-index: 1; position: relative; margin-bottom: 2rem; line-height: 1.6; }
+        .topic-action { color: var(--c-teal); font-weight: 700; font-size: 0.95rem; display: flex; align-items: center; gap: 0.5rem; z-index: 1; position: relative; }
+
+        /* Tarjeta Usabilidad (#8) */
+        .usability-card { background: var(--c-navy); color: var(--c-white); cursor: default; border: none; }
+        .usability-card::before { display: none; }
+        .usability-card:hover { transform: none; box-shadow: var(--shadow-md); background: var(--c-navy); }
+        .usability-card h3 { color: var(--c-white); margin-bottom: 2rem; }
+        .usability-item { margin-bottom: 1.5rem; }
+        .usability-item p { margin-bottom: 0.75rem; color: #94a3b8; font-size: 0.9rem; font-weight: 500; }
+        .rating-group { display: flex; gap: 0.5rem; justify-content: space-between; }
+        .rating-label {
+            width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;
+            background: rgba(255,255,255,0.05); border-radius: 0.75rem; cursor: pointer; transition: var(--transition); font-size: 0.9rem; font-weight: 600; color: #e2e8f0;
+        }
+        .rating-label:hover { background: rgba(255,255,255,0.1); }
+        .rating-input:checked + .rating-label { background: var(--c-teal); color: white; transform: scale(1.1); }
+        .rating-input:focus-visible + .rating-label { outline: 2px solid white; outline-offset: 2px; }
+        .btn-usability { width: 100%; background: var(--c-green); color: white; padding: 1rem; border-radius: 0.75rem; font-weight: 700; margin-top: 1rem; transition: var(--transition); font-size: 1rem; }
+        .btn-usability:hover { background: #059669; transform: translateY(-2px); }
+
+        /* ================= MODALS ================= */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(8px); z-index: 1000; display: flex; align-items: center; justify-content: center;
+            opacity: 0; visibility: hidden; transition: var(--transition); padding: 1rem;
+            /* Optimización GPU */
+            will-change: opacity, visibility;
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+        }
+        .modal-overlay.active { opacity: 1; visibility: visible; }
+        
+        .modal-content {
+            background: var(--c-white); width: 100%; max-width: 800px; max-height: 90vh; border-radius: var(--radius);
+            overflow-y: auto; position: relative; transform: scale(0.95) translateY(20px); transition: var(--transition);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        }
+        .modal-overlay.active .modal-content { transform: scale(1) translateY(0); }
+        
+        .modal-header { padding: 2.5rem 2.5rem 1.5rem; display: flex; justify-content: space-between; align-items: center; }
+        .modal-header-text { display: flex; align-items: center; gap: 1rem; }
+        .modal-header-text .topic-icon { margin: 0; width: 48px; height: 48px; }
+        .modal-title { font-size: 1.75rem; letter-spacing: -0.02em; }
+        .btn-close {
+            width: 44px; height: 44px; background: var(--c-bg); border-radius: 50%; display: flex;
+            align-items: center; justify-content: center; transition: var(--transition); color: var(--c-text);
+        }
+        .btn-close svg { width: 20px; height: 20px; }
+        .btn-close:hover { background: #fee2e2; color: var(--c-red); transform: rotate(90deg); }
+        
+        .modal-body { padding: 0 2.5rem 2.5rem; }
+        .modal-intro { font-size: 1.125rem; margin-bottom: 2rem; color: var(--c-navy); font-weight: 500; line-height: 1.6; }
+        
+        .video-container { position: relative; margin-bottom: 2.5rem; border-radius: 1rem; overflow: hidden; background: var(--c-navy); box-shadow: var(--shadow-md); }
+        .video-container video { width: 100%; aspect-ratio: 16/9; object-fit: cover; }
+        .lsc-badge {
+            position: absolute; top: 1.5rem; right: 1.5rem; background: rgba(0,0,0,0.6); color: white;
+            padding: 0.4rem 1rem; border-radius: 2rem; font-size: 0.8rem; font-weight: 700;
+            display: flex; align-items: center; gap: 0.5rem; border: 1px solid rgba(255,255,255,0.2); backdrop-filter: blur(8px);
+        }
+        
+        .recs-list { margin-bottom: 2.5rem; }
+        .recs-list h4 { margin-bottom: 1.5rem; font-size: 1.25rem; color: var(--c-navy); }
+        .recs-list ul li { position: relative; padding-left: 2.5rem; margin-bottom: 1rem; color: var(--c-text); line-height: 1.6; }
+        .recs-list ul li svg { position: absolute; left: 0; top: 2px; color: var(--c-green); width: 20px; height: 20px; }
+        
+        .modal-note {
+            background: var(--c-teal-light); border-left: 4px solid var(--c-teal); padding: 1.5rem 2rem;
+            border-radius: 0 1rem 1rem 0; color: var(--c-navy-light); font-weight: 500; font-style: italic; line-height: 1.6;
+        }
+
+        /* ================= DESPEDIDA (PILARES) ================= */
+        .pilares-section { padding: 6rem 0; background: var(--c-bg); border-top: 1px solid rgba(0,0,0,0.05); }
+        .pilares-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2.5rem; margin-top: 4rem; }
+        .pilar-card {
+            background: var(--c-white); padding: 2.5rem; border-radius: var(--radius); display: flex; flex-direction: column; gap: 1.5rem; box-shadow: var(--shadow-sm); transition: var(--transition); border: 1px solid transparent;
+        }
+        .pilar-card:hover { transform: translateY(-5px); box-shadow: var(--shadow-lg); border-color: rgba(14,165,233,0.1); }
+        .pilar-icon { font-size: 2.5rem; color: var(--c-teal); background: var(--c-teal-light); width: 64px; height: 64px; border-radius: 1rem; display: flex; align-items: center; justify-content: center; }
+        .pilar-icon svg { width: 32px; height: 32px; }
+        .pilar-text h3 { margin-bottom: 0.75rem; font-size: 1.35rem; }
+        .pilar-text p { color: var(--c-text); font-size: 0.95rem; }
+
+        /* ================= FOOTER REDISEÑADO ================= */
+        footer { background: var(--c-navy); color: white; padding: 5rem 0 3rem; text-align: center; }
+        .footer-content { max-width: 700px; margin: 0 auto; display: flex; flex-direction: column; align-items: center; }
+        .footer-logo { display: flex; align-items: center; justify-content: center; gap: 0.75rem; font-size: 1.75rem; font-weight: 800; color: white; margin-bottom: 1.5rem; letter-spacing: -0.02em; }
+        .footer-logo svg { color: var(--c-teal); width: 32px; height: 32px; }
+        .footer-content p { color: #94a3b8; line-height: 1.8; margin-bottom: 2.5rem; font-size: 1.05rem; }
+        
+        .footer-links { display: flex; flex-wrap: wrap; justify-content: center; gap: 2.5rem; margin-bottom: 4rem; }
+        .footer-links a { font-weight: 500; color: #cbd5e1; transition: var(--transition); font-size: 1rem; position: relative; }
+        .footer-links a::after { content: ''; position: absolute; width: 0; height: 2px; bottom: -4px; left: 0; background-color: var(--c-teal); transition: width 0.3s ease; }
+        .footer-links a:hover { color: var(--c-white); text-shadow: 0 0 10px rgba(255,255,255,0.1); }
+        .footer-links a:hover::after { width: 100%; }
+        
+        .footer-bottom { border-top: 1px solid rgba(255,255,255,0.1); padding-top: 2rem; color: #64748b; font-size: 0.9rem; }
+
+        /* ================= CONFETTI GLOBAL ================= */
+        .confetti-piece {
+            position: fixed; top: -20px; width: 10px; height: 20px; z-index: 9999;
+            animation: fall linear forwards; border-radius: 2px; pointer-events: none;
+        }
+        @keyframes fall {
+            0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+        }
+
+        /* ================= RESPONSIVE ================= */
+        @media (max-width: 992px) {
+            .hero-grid { grid-template-columns: 1fr; text-align: center; gap: 3rem; }
+            .hero-text p { margin: 0 auto 2.5rem; }
+            .hero-badge { transform: translateX(0); right: 10%; }
+        }
+        @media (max-width: 768px) {
+            .nav-links {
+                position: fixed; top: 0; right: -100%; width: 280px; height: 100vh; background: var(--c-white);
+                flex-direction: column; padding: 6rem 2.5rem; box-shadow: var(--shadow-lg); transition: var(--transition); z-index: 100;
+            }
+            .nav-links.active { right: 0; }
+            .hamburger { display: block; }
+            .quiz-card { padding: 3rem 1.5rem; }
+            .modal-header, .modal-body { padding: 1.5rem; }
+            .modal-header { flex-direction: column; align-items: flex-start; gap: 1rem; position: relative; }
+            .btn-close { position: absolute; top: 1.5rem; right: 1.5rem; }
+            .footer-links { flex-direction: column; gap: 1.5rem; }
+            .footer-links a::after { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+    <a href="#main-content" class="skip-link">Saltar al contenido principal</a>
+
+    <div class="nav-overlay" id="nav-overlay" aria-hidden="true"></div>
+    <nav>
+        <div class="container nav-container">
+            <div class="logo">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M15.2 3.5c-1.3 0-2.4.9-2.9 2.1-.5-1.2-1.6-2.1-2.9-2.1-1.9 0-3.4 1.5-3.4 3.5 0 3.3 1.9 5.8 2.8 9.4.2.9 1.4 1.2 2 .5l1.2-1.2 1.2 1.2c.6.7 1.8.4 2-.5.9-3.6 2.8-6.1 2.8-9.4 0-2-1.5-3.5-3.4-3.5z"/>
+                </svg>
+                Comunica Tu Sonrisa
+            </div>
+            <button class="hamburger" id="btn-hamburger" aria-label="Menú" aria-expanded="false">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg>
+            </button>
+            <div class="nav-links" id="nav-links">
+                <a href="#hero">Inicio</a>
+                <a href="#pre-test">Evaluación</a>
+                <a href="#temas">Módulos</a>
+                <a href="#despedida">Cierre</a>
+            </div>
+        </div>
+    </nav>
+
+    <header id="hero" class="hero">
+        <div class="container hero-grid">
+            <div class="hero-text reveal">
+                <h1>Tu salud bucal,<br><span>sin barreras</span></h1>
+                <p>Aprende sobre cuidado odontológico a través de videos interactivos en Lengua de Señas. Cuidar tu sonrisa mejora tu bienestar general y tu calidad de vida.</p>
+                <a href="#temas" class="btn-primary">
+                    Comenzar a aprender
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                </a>
+            </div>
+            <div class="hero-visual reveal" aria-hidden="true">
+                <div class="hero-visual-bg"></div>
+                <div class="hero-glass-card">
+                    <div class="glass-header">
+                        <div class="glass-dot"></div><div class="glass-dot"></div><div class="glass-dot"></div>
+                    </div>
+                    <div class="glass-body">
+                        <video controls preload="metadata" style="width: 100%; height: 100%; object-fit: cover; border-radius: inherit; outline: none; background: var(--c-navy);">
+                            <source src="videos/Bienvenida.mp4" type="video/mp4">
+                            Tu navegador no soporta el tag de video.
+                        </video>
+                    </div>
+                </div>
+                <div class="hero-badge">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/></svg>
+                    100% Accesible (LSC)
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main id="main-content">
+        <section id="pre-test" class="quiz-section bg-navy">
+            <div class="container">
+                <div class="quiz-card" id="pre-test-container">
+                    <div class="quiz-badge">PRE-TEST</div>
+                    </div>
+            </div>
+        </section>
+
+        <section id="temas" class="topics-section">
+            <div class="container">
+                <div class="section-header reveal">
+                    <h2>Módulos de Aprendizaje</h2>
+                    <p>Explora nuestras guías clínicas en Lengua de Señas para un cuidado dental integral.</p>
+                </div>
+                
+                <div class="topics-grid" id="topics-grid">
+                    <form class="topic-card usability-card reveal" id="form-usabilidad" aria-label="Escala de usabilidad">
+                        <h3>Ayúdanos a mejorar</h3>
+                        <div class="usability-item">
+                            <p id="q-clear">¿La información es clara? (1-5)</p>
+                            <div class="rating-group" role="radiogroup" aria-labelledby="q-clear"></div>
+                        </div>
+                        <div class="usability-item">
+                            <p id="q-design">¿El diseño es fácil de usar? (1-5)</p>
+                            <div class="rating-group" role="radiogroup" aria-labelledby="q-design"></div>
+                        </div>
+                        <div class="usability-item">
+                            <p id="q-video">¿Los videos son útiles? (1-5)</p>
+                            <div class="rating-group" role="radiogroup" aria-labelledby="q-video"></div>
+                        </div>
+                        <button type="submit" class="btn-usability">Enviar Valoración</button>
+                        <p id="usabilidad-msg" class="sr-only" aria-live="polite"></p>
+                    </form>
+                </div>
+            </div>
+        </section>
+
+        <section id="despedida" class="pilares-section">
+            <div class="container">
+                <div class="section-header reveal" style="margin-bottom: 3rem;">
+                    <h2>Tu compromiso con la salud</h2>
+                    <p>Mantener una sonrisa sana se basa en estos tres pilares fundamentales.</p>
+                </div>
+                <div class="pilares-grid">
+                    <div class="pilar-card reveal">
+                        <div class="pilar-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/><path d="M8 18h.01"/><path d="M12 18h.01"/><path d="M16 18h.01"/></svg>
+                        </div>
+                        <div class="pilar-text">
+                            <h3>Constancia</h3>
+                            <p>El cepillado diario y las rutinas no deben saltarse. La disciplina construye un esmalte fuerte a largo plazo.</p>
+                        </div>
+                    </div>
+                    <div class="pilar-card reveal">
+                        <div class="pilar-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z"/><path d="M12 4v4"/><path d="M10 2s1 2 2 2 2-2 2-2"/></svg>
+                        </div>
+                        <div class="pilar-text">
+                            <h3>Nutrición</h3>
+                            <p>Tu cuerpo usa lo que comes para proteger tu boca. Evitar azúcares refinados y aumentar la hidratación es clave.</p>
+                        </div>
+                    </div>
+                    <div class="pilar-card reveal">
+                        <div class="pilar-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+                        </div>
+                        <div class="pilar-text">
+                            <h3>Acompañamiento</h3>
+                            <p>No estás solo. Tu odontólogo es tu aliado principal para la prevención y el diagnóstico temprano.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="post-test" class="quiz-section bg-green">
+            <div class="container">
+                <div class="quiz-card" id="post-test-container">
+                    <div class="quiz-badge" style="background:var(--c-green)">POST-TEST</div>
+                    </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container">
+            <div class="footer-content reveal">
+                <div class="footer-logo">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M15.2 3.5c-1.3 0-2.4.9-2.9 2.1-.5-1.2-1.6-2.1-2.9-2.1-1.9 0-3.4 1.5-3.4 3.5 0 3.3 1.9 5.8 2.8 9.4.2.9 1.4 1.2 2 .5l1.2-1.2 1.2 1.2c.6.7 1.8.4 2-.5.9-3.6 2.8-6.1 2.8-9.4 0-2-1.5-3.5-3.4-3.5z"/>
+                    </svg>
+                    Comunica Tu Sonrisa
+                </div>
+                <p>Proyecto clínico de educación odontológica accesible e inclusiva. Fomentando la salud bucal a través de herramientas visuales y en Lengua de Señas.</p>
+                
+                <div class="footer-links">
+                    <a href="#hero">Inicio</a>
+                    <a href="#temas">Módulos de Aprendizaje</a>
+                    <a href="#pre-test">Evaluación de Conocimientos</a>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2026 Comunica Tu Sonrisa. Todos los derechos reservados.</p>
+            </div>
+        </div>
+    </footer>
+
+    <div class="modal-overlay" id="topic-modal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-header-text">
+                    <span id="modal-icon" class="topic-icon"></span>
+                    <h2 id="modal-title" class="modal-title">Título</h2>
+                </div>
+                <button class="btn-close" id="modal-close" aria-label="Cerrar modal">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" x2="6" y1="6" y2="18"/><line x1="6" x2="18" y1="6" y2="18"/></svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p id="modal-intro" class="modal-intro"></p>
+                
+                <div class="video-container">
+                    <div class="lsc-badge" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="m9 12 2 2 4-4"/></svg>
+                        LSC
+                    </div>
+                    <video id="modal-video" controls preload="metadata" aria-label="Video explicativo en Lengua de Señas">
+                        Tu navegador no soporta el tag de video.
+                    </video>
+                </div>
+
+                <div class="recs-list">
+                    <h4>Recomendaciones clave:</h4>
+                    <ul id="modal-recs"></ul>
+                </div>
+
+                <div id="modal-note" class="modal-note"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ================= FIREBASE CONFIG =================
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_PROJECT.firebaseapp.com",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_PROJECT.appspot.com",
+            messagingSenderId: "YOUR_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
+        
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const db = firebase.firestore();
+
+        // Activar persistencia offline
+        db.enablePersistence().catch((err) => {
+            console.log("Error de persistencia offline:", err.code);
+        });
+
+        // ================= DATOS DE TEMAS =================
+        const topicsData = [
+            { id: 'higiene', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.5s-6 6.5-6 10.5a6 6 0 0 0 12 0c0-4-6-10.5-6-10.5z"/><path d="M12 16v-2"/></svg>', title: 'Higiene Bucal', video: 'videos/Higiene.mp4', intro: 'Mantener una correcta higiene bucal es fundamental para prevenir caries y enfermedades de las encías. Aprende las técnicas adecuadas a través de nuestros videos en Lengua de Señas.', recs: ['Cepillado dental correcto al menos 3 veces al día', 'Uso de hilo dental después de cada comida principal', 'Uso de enjuague bucal antimicrobiano', 'Cambio del cepillo de dientes cada 3 meses'], note: 'Se recomienda cepillar los dientes durante al menos dos minutos, realizando movimientos suaves en todas las superficies dentales.' },
+            { id: 'prevencion', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>', title: 'Prevención', video: 'videos/Prevención.mp4', intro: 'La prevención es clave para mantener una boca sana. Visitar al odontólogo regularmente permite detectar problemas a tiempo y evitar tratamientos más complejos en el futuro.', recs: ['Revisiones periódicas con el odontólogo cada 6 meses', 'Uso de productos con flúor para fortalecer el esmalte', 'Aplicación de sellantes dentales en niños y jóvenes', 'Evitar el consumo excesivo de azúcar y bebidas ácidas'], note: 'La detección temprana puede salvar tus dientes. Un chequeo regular es siempre más económico que un tratamiento tardío.' },
+            { id: 'encias', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>', title: 'Salud de Encías', video: 'videos/Salud de encías.mp4', intro: 'Las encías saludables son firmes y de color rosado. Si presentan sangrado, inflamación o dolor, puede ser señal de gingivitis o periodontitis.', recs: ['Aprende a identificar enfermedades periodontales', 'Presta atención a signos de alerta: sangrado, inflamación o mal aliento', 'Mantén una limpieza adecuada entre los dientes y las encías', 'Consulta al odontólogo ante cualquier síntoma inusual'], note: 'El sangrado de encías no es normal. Si ocurre con frecuencia, consulta tu odontólogo cuanto antes.' },
+            { id: 'alimentacion', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z"/><path d="M12 4v4"/><path d="M10 2s1 2 2 2 2-2 2-2"/></svg>', title: 'Alimentación Saludable', video: 'videos/Salud bucal.mp4', intro: 'La alimentación tiene un papel fundamental en la prevención de enfermedades bucales. Una dieta equilibrada ayuda a mantener el equilibrio del ecosistema oral.', recs: ['Mantén una dieta equilibrada y variada', 'Consume alimentos que fortalezcan los dientes: lácteos, frutos secos, vegetales', 'Reduce el consumo de alimentos cariogénicos: dulces, harinas refinadas, refrescos', 'Bebe suficiente agua a lo largo del día'], note: 'El calcio, el fósforo y la vitamina D son esenciales para tener dientes y huesos fuertes. Inclúyelos en tu dieta diaria.' },
+            { id: 'etapas', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>', title: 'Cuidados por Edad', video: 'videos/Etapas de vida.mp4', intro: 'El cuidado bucal cambia según la edad. Conoce las recomendaciones específicas para cada etapa de la vida.', recs: ['Niños: supervisión del cepillado hasta los 8–10 años', 'Adolescentes: acudir al odontólogo para detectar problemas de ortodoncia', 'Adultos: prevención de enfermedad periodontal y mantenimiento del esmalte', 'Adultos mayores: cuidado especial de prótesis dentales y encías'], note: 'Los buenos hábitos bucales se aprenden desde la infancia. Enseñar a los niños a cepillarse correctamente es uno de los mejores regalos.' },
+            { id: 'visitas', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16"/><path d="M9 21v-4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v4"/><path d="M10 9h4"/><path d="M12 7v4"/></svg>', title: 'Visitas Odontológicas', video: 'videos/Visitas.mp4', intro: 'Las visitas regulares al odontólogo permiten detectar problemas a tiempo y mantener una buena salud bucal a largo plazo.', recs: ['Frecuencia recomendada: al menos cada 6 meses', 'Las limpiezas profesionales eliminan sarro que el cepillo no puede quitar', 'El diagnóstico temprano reduce el costo y complejidad del tratamiento', 'Lleva un registro de tus visitas y seguimientos odontológicos'], note: 'Agenda tu próxima cita antes de salir del consultorio para no olvidarla. La constancia es la clave.' },
+            { id: 'general', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>', title: 'Boca & Cuerpo', video: 'videos/Salud general.mp4', intro: 'La salud bucal está estrechamente relacionada con la salud general. Los problemas en la boca pueden afectar otras partes del cuerpo.', recs: ['Las bacterias bucales pueden aumentar el riesgo de enfermedades cardiovasculares', 'Las personas con diabetes son más propensas a enfermedades periodontales', 'La salud oral impacta directamente en la calidad de vida y autoestima', 'Mantener una buena higiene oral contribuye al bienestar general'], note: 'La boca es la puerta del cuerpo. Cuidarla bien significa cuidar también tu corazón, tu sistema inmune y tu bienestar mental.' }
+        ];
+
+        const quizMasterData = [
+            { q: "¿Qué contiene la pasta dental que protege los dientes?", options: ["Sal", "Flúor", "Azúcar", "Ácidos"], correct: "Flúor" },
+            { q: "¿Cada cuánto se debe visitar al odontólogo?", options: ["Solo cuando hay dolor", "Cada 3 a 6 meses", "Una vez al año", "No es necesario"], correct: "Cada 3 a 6 meses" },
+            { q: "¿Cuántas veces al día se deben cepillar los dientes?", options: ["1 vez", "2 veces", "Solo cuando duele", "3 veces"], correct: "3 veces" },
+            { q: "¿Las encías que sangran son normales?", options: ["Verdadero", "Falso"], correct: "Falso" },
+            { q: "¿El enjuague bucal reemplaza el cepillado?", options: ["Verdadero", "Falso"], correct: "Falso" },
+            { q: "¿Qué provoca la caries dental?", options: ["El agua", "El azúcar y mala higiene", "Un mal cepillado"], correct: "El azúcar y mala higiene" },
+            { q: "¿Para qué sirve el hilo dental?", options: ["Limpiar y remover restos de comida entre los dientes", "Blanquear los dientes", "Quitar el dolor"], correct: "Limpiar y remover restos de comida entre los dientes" }
+        ];
+
+        // ================= INTERFAZ Y ANIMACIONES =================
+        
+        // Menú Móvil
+        const hamburger = document.getElementById('btn-hamburger');
+        const navLinks = document.getElementById('nav-links');
+        const overlay = document.getElementById('nav-overlay');
+        const iconMenu = '<line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/>';
+        const iconClose = '<line x1="18" x2="6" y1="6" y2="18"/><line x1="6" x2="18" y1="6" y2="18"/>';
+
+        function toggleMenu() {
+            const isExpanded = hamburger.getAttribute('aria-expanded') === 'true';
+            hamburger.setAttribute('aria-expanded', !isExpanded);
+            navLinks.classList.toggle('active');
+            overlay.classList.toggle('active');
+            hamburger.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${!isExpanded ? iconClose : iconMenu}</svg>`;
+        }
+        hamburger.addEventListener('click', toggleMenu);
+        overlay.addEventListener('click', toggleMenu);
+        navLinks.querySelectorAll('a').forEach(link => {
+            link.addEventListener('click', () => { if(navLinks.classList.contains('active')) toggleMenu(); });
+        });
+
+        // Scroll Reveal Animations
+        const observerOptions = { threshold: 0.15 };
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if(entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, observerOptions);
+
+        // Confetti Function Real
+        function launchConfetti() {
+            for(let i = 0; i < 80; i++) {
+                const piece = document.createElement('div');
+                piece.className = 'confetti-piece';
+                piece.style.left = Math.random() * 100 + 'vw';
+                piece.style.animationDuration = (Math.random() * 3 + 2) + 's';
+                piece.style.background = ['#0ea5e9','#10b981','#f59e0b','#ef4444'][Math.floor(Math.random()*4)];
+                document.body.appendChild(piece);
+                setTimeout(() => piece.remove(), 5000);
+            }
+        }
+
+        // ================= RENDERIZADO =================
+        const topicsGrid = document.getElementById('topics-grid');
+        const formUsabilidad = document.getElementById('form-usabilidad');
+
+        topicsData.forEach(topic => {
+            const card = document.createElement('div');
+            card.className = 'topic-card reveal';
+            card.setAttribute('tabindex', '0');
+            card.setAttribute('role', 'button');
+            card.setAttribute('aria-label', `Abrir tema: ${topic.title}`);
+            card.innerHTML = `
+                <div class="topic-icon" aria-hidden="true">${topic.svg}</div>
+                <h3>${topic.title}</h3>
+                <p>${topic.intro.substring(0, 85)}...</p>
+                <div class="topic-action">Ver contenido <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></div>
+            `;
+            const openModal = () => populateAndOpenModal(topic, card);
+            card.addEventListener('click', openModal);
+            card.addEventListener('keydown', (e) => { if(e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openModal(); }});
+            topicsGrid.insertBefore(card, formUsabilidad);
+        });
+
+        // Activar observador en elementos .reveal
+        document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+        // Render inputs usabilidad
+        const usabilidadGroups = [{ id: 'q1', name: 'clara' }, { id: 'q2', name: 'diseno' }, { id: 'q3', name: 'videos' }];
+        document.querySelectorAll('.rating-group').forEach((group, index) => {
+            for(let i=1; i<=5; i++) {
+                const inputId = `usab-${usabilidadGroups[index].name}-${i}`;
+                group.innerHTML += `<div style="position:relative;"><input type="radio" name="${usabilidadGroups[index].name}" value="${i}" id="${inputId}" class="sr-only rating-input" required><label for="${inputId}" class="rating-label">${i}</label></div>`;
+            }
+        });
+
+        // ================= MODAL & FOCUS TRAP REAL =================
+        const modal = document.getElementById('topic-modal');
+        const modalCloseBtn = document.getElementById('modal-close');
+        const modalVideo = document.getElementById('modal-video');
+        let focusReturnElement = null;
+
+        const focusableSelectors = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"]), video';
+
+        function trapFocus(e) {
+            if (!modal.classList.contains('active')) return;
+            const focusable = modal.querySelectorAll(focusableSelectors);
+            if (focusable.length === 0) return;
+            
+            const first = focusable[0];
+            const last = focusable[focusable.length - 1];
+
+            if (e.key === 'Tab') {
+                if (e.shiftKey) {
+                    if (document.activeElement === first) {
+                        e.preventDefault();
+                        last.focus();
+                    }
+                } else {
+                    if (document.activeElement === last) {
+                        e.preventDefault();
+                        first.focus();
+                    }
+                }
+            }
+        }
+
+        modal.addEventListener('keydown', trapFocus);
+
+        function populateAndOpenModal(data, triggerElement) {
+            focusReturnElement = triggerElement;
+            document.getElementById('modal-icon').innerHTML = data.svg;
+            document.getElementById('modal-title').textContent = data.title;
+            document.getElementById('modal-intro').textContent = data.intro;
+            modalVideo.innerHTML = `<source src="${data.video}" type="video/mp4">`;
+            modalVideo.load();
+            const svgCheck = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>';
+            document.getElementById('modal-recs').innerHTML = data.recs.map(rec => `<li>${svgCheck} ${rec}</li>`).join('');
+            document.getElementById('modal-note').textContent = data.note;
+
+            modal.classList.add('active');
+            modal.setAttribute('aria-hidden', 'false');
+            document.body.style.overflow = 'hidden';
+            modalCloseBtn.focus();
+        }
+
+        function closeModal() {
+            modal.classList.remove('active');
+            modal.setAttribute('aria-hidden', 'true');
+            document.body.style.overflow = '';
+            modalVideo.pause();
+            if(focusReturnElement) focusReturnElement.focus();
+        }
+
+        modalCloseBtn.addEventListener('click', closeModal);
+        modal.addEventListener('click', (e) => { if(e.target === modal) closeModal(); });
+        document.addEventListener('keydown', (e) => { if(e.key === 'Escape' && modal.classList.contains('active')) closeModal(); });
+
+        // ================= QUIZ LOGIC =================
+        function shuffleArray(array) {
+            let arr = [...array];
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+
+        class QuizComponent {
+            constructor(containerId, isPostTest) {
+                this.container = document.getElementById(containerId);
+                this.collectionName = isPostTest ? 'posttest' : 'pretest';
+                // Mezcla avanzada de POST-TEST (preguntas y opciones)
+                this.questions = isPostTest ? shuffleArray(quizMasterData.map(q => ({...q, options: shuffleArray([...q.options])}))) : [...quizMasterData];
+                this.currentQIndex = 0;
+                this.score = 0;
+                this.userAnswers = [];
+                this.renderInitialUI();
+                this.renderQuestion();
+            }
+
+            renderInitialUI() {
+                this.feedback = document.createElement('div');
+                this.feedback.setAttribute('aria-live', 'polite');
+                this.feedback.className = 'sr-only';
+
+                this.header = document.createElement('div');
+                this.header.className = 'quiz-header';
+                this.header.innerHTML = `<div id="progress-text-${this.collectionName}" style="font-weight:700; color:var(--c-text);"></div><div class="progress-bar"><div class="progress-fill" id="progress-fill-${this.collectionName}"></div></div>`;
+                
+                this.body = document.createElement('div');
+                
+                this.footer = document.createElement('div');
+                this.footer.className = 'quiz-footer';
+                this.nextBtn = document.createElement('button');
+                this.nextBtn.className = 'btn-next';
+                this.nextBtn.innerHTML = 'Siguiente <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>';
+                this.nextBtn.addEventListener('click', () => this.nextQuestion());
+                this.footer.appendChild(this.nextBtn);
+                
+                this.resultsArea = document.createElement('div');
+                this.resultsArea.className = 'quiz-results';
+
+                this.container.append(this.feedback, this.header, this.body, this.footer, this.resultsArea);
+            }
+
+            renderQuestion() {
+                if (this.currentQIndex >= this.questions.length) return this.showResults();
+                const q = this.questions[this.currentQIndex];
+                document.getElementById(`progress-text-${this.collectionName}`).textContent = `Pregunta ${this.currentQIndex + 1} de ${this.questions.length}`;
+                document.getElementById(`progress-fill-${this.collectionName}`).style.width = `${((this.currentQIndex + 1) / this.questions.length) * 100}%`;
+                
+                this.body.innerHTML = `<div class="question-text">${q.q}</div>`;
+                const grid = document.createElement('div');
+                grid.className = 'options-grid';
+                grid.setAttribute('role', 'radiogroup');
+
+                q.options.forEach(opt => {
+                    const btn = document.createElement('button');
+                    btn.className = 'option-btn';
+                    btn.innerHTML = `<span>${opt}</span> <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="icon-result"><path class="check" d="M20 6 9 17l-5-5" style="display:none"/><path class="cross" d="M18 6 6 18M6 6l12 12" style="display:none"/></svg>`;
+                    btn.addEventListener('click', () => this.handleAnswer(btn, opt, q.correct));
+                    grid.appendChild(btn);
+                });
+                this.body.appendChild(grid);
+                this.nextBtn.classList.remove('visible');
+            }
+
+            handleAnswer(selectedBtn, selectedOpt, correctOpt) {
+                const buttons = this.body.querySelectorAll('.option-btn');
+                buttons.forEach(btn => btn.disabled = true);
+                const isCorrect = selectedOpt === correctOpt;
+                if (isCorrect) this.score++;
+                
+                this.userAnswers.push({ pregunta: this.questions[this.currentQIndex].q, respuesta: selectedOpt, correcta: isCorrect });
+                
+                this.feedback.textContent = isCorrect ? "Respuesta correcta seleccionada." : "Respuesta incorrecta seleccionada.";
+
+                buttons.forEach(btn => {
+                    const text = btn.querySelector('span').textContent;
+                    if (text === correctOpt) {
+                        btn.classList.add('correct');
+                        btn.querySelector('.check').style.display = 'block';
+                    } else if (btn === selectedBtn && !isCorrect) {
+                        btn.classList.add('incorrect');
+                        btn.querySelector('.cross').style.display = 'block';
+                    }
+                });
+                this.nextBtn.classList.add('visible');
+                this.nextBtn.focus();
+            }
+
+            nextQuestion() { this.currentQIndex++; this.renderQuestion(); }
+
+            showResults() {
+                this.header.style.display = 'none'; this.body.style.display = 'none'; this.footer.style.display = 'none';
+                this.resultsArea.style.display = 'block';
+                
+                // Mensajes motivacionales dinámicos
+                let msg = '';
+                if(this.score === 7){ msg = '¡Perfecto! Dominas los conceptos principales de salud bucal.'; }
+                else if(this.score >= 5){ msg = 'Muy bien. Tienes buenos conocimientos de cuidado odontológico.'; }
+                else if(this.score >= 3){ msg = 'Buen intento. Te invitamos a revisar los módulos para reforzar conceptos.'; }
+                else{ msg = 'Te recomendamos explorar los módulos detalladamente nuevamente.'; }
+
+                // Resumen de resultados completo
+                this.resultsArea.innerHTML = `
+                    <div class="score-circle">${this.score}/${this.questions.length}</div>
+                    <h3 style="font-size:1.75rem; margin-bottom:1rem; letter-spacing:-0.02em;">Prueba Completada</h3>
+                    <p style="margin-bottom:1.5rem; color:var(--c-text); font-size:1.1rem;">${msg}</p>
+                    
+                    <div class="results-summary">
+                        ${this.userAnswers.map(a => `
+                            <div class="summary-item ${a.correcta ? 'ok' : 'bad'}">
+                                <strong>${a.pregunta}</strong>
+                                <span>Tu respuesta: ${a.respuesta}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+
+                    <button class="btn-primary" id="save-btn-${this.collectionName}" style="margin-top: 1rem;">
+                        Guardar Resultado
+                    </button>
+                    <p id="save-msg-${this.collectionName}" aria-live="polite" style="margin-top:1.5rem; color:var(--c-teal); font-weight:700;"></p>
+                `;
+
+                if(this.score >= 5) launchConfetti();
+
+                // Guardado Firebase Completo
+                document.getElementById(`save-btn-${this.collectionName}`).addEventListener('click', async (e) => {
+                    const btn = e.target;
+                    const msgEl = document.getElementById(`save-msg-${this.collectionName}`);
+                    btn.disabled = true; btn.textContent = 'Guardando...';
+                    
+                    try {
+                        await db.collection(this.collectionName).add({ 
+                            timestamp: new Date(), 
+                            puntaje: this.score, 
+                            total: this.questions.length, 
+                            respuestas: this.userAnswers 
+                        });
+                        btn.style.display = 'none';
+                        msgEl.style.color = 'var(--c-green)';
+                        msgEl.textContent = 'Resultado guardado correctamente.';
+                    } catch (error) {
+                        btn.disabled = false; btn.textContent = 'Intentar de nuevo'; 
+                        msgEl.style.color = 'var(--c-red)'; 
+                        msgEl.textContent = 'Error al guardar. Revisa la consola para más detalles.';
+                        console.error(error);
+                    }
+                });
+            }
+        }
+
+        new QuizComponent('pre-test-container', false);
+        new QuizComponent('post-test-container', true);
+
+        // ================= USABILIDAD SUBMIT =================
+        formUsabilidad.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = formUsabilidad.querySelector('button');
+            const msgEl = document.getElementById('usabilidad-msg');
+            const c = formUsabilidad.querySelector('input[name="clara"]:checked')?.value;
+            const d = formUsabilidad.querySelector('input[name="diseno"]:checked')?.value;
+            const v = formUsabilidad.querySelector('input[name="videos"]:checked')?.value;
+            if(!c || !d || !v) return;
+
+            btn.disabled = true; btn.textContent = 'Enviando...';
+            try {
+                await db.collection('usabilidad').add({
+                    timestamp: new Date(),
+                    escala_clara: parseInt(c), escala_diseno: parseInt(d), escala_videos: parseInt(v)
+                });
+                formUsabilidad.innerHTML = `
+                    <div style="text-align:center; padding: 3rem 0;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:48px; height:48px; color:var(--c-teal); margin-bottom:1rem;">
+                            <path d="M15.2 3.5c-1.3 0-2.4.9-2.9 2.1-.5-1.2-1.6-2.1-2.9-2.1-1.9 0-3.4 1.5-3.4 3.5 0 3.3 1.9 5.8 2.8 9.4.2.9 1.4 1.2 2 .5l1.2-1.2 1.2 1.2c.6.7 1.8.4 2-.5.9-3.6 2.8-6.1 2.8-9.4 0-2-1.5-3.5-3.4-3.5z"/>
+                        </svg>
+                        <h3 style="color:white; margin-bottom:0.5rem; font-size:1.5rem;">¡Gracias!</h3>
+                        <p style="color:#94a3b8; font-size:0.95rem;">Tus respuestas nos ayudan a seguir mejorando.</p>
+                    </div>
+                `;
+            } catch (error) {
+                btn.disabled = false; btn.textContent = 'Intentar de nuevo'; msgEl.classList.remove('sr-only'); msgEl.style.color = '#fca5a5'; msgEl.textContent = 'Error de conexión con Firebase.';
+            }
+        });
+    </script>
+</body>
+</html>
