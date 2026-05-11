@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard - Resultados Comunica Tu Sonrisa</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8fafc; padding: 40px; text-align: center; }
+        .card { background: white; padding: 2rem; border-radius: 1.5rem; shadow: 0 10px 15px rgba(0,0,0,0.1); max-width: 800px; margin: 0 auto; }
+        h1 { color: #0f172a; }
+        .stats { display: flex; justify-content: space-around; margin: 2rem 0; }
+        .stat-box { background: #e0f2fe; padding: 1rem; border-radius: 1rem; min-width: 150px; }
+        .stat-box h3 { margin: 0; color: #0ea5e9; font-size: 2rem; }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <h1>Resultados del Proyecto</h1>
+        <div class="stats">
+            <div class="stat-box"><p>Participantes</p><h3 id="total-p">0</h3></div>
+            <div class="stat-box"><p>Mejora Promedio</p><h3 id="mejora">0%</h3></div>
+        </div>
+        <canvas id="graficaResultados"></canvas>
+    </div>
+
+    <script>
+        // MISMA CONFIGURACIÓN DE TU FIREBASE
+        const firebaseConfig = {
+            apiKey: "AIzaSyBL5PnoKNUnqInUZaZgNDzuqoPy44hitYc",
+            authDomain: "comunica-tu-sonrisa.firebaseapp.com",
+            projectId: "comunica-tu-sonrisa",
+            storageBucket: "comunica-tu-sonrisa.firebasestorage.app",
+            messagingSenderId: "31365340506",
+            appId: "1:31365340506:web:379b352133cb2759ab2763"
+        };
+        
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        async function cargarDatos() {
+            const snapshot = await db.collection('evaluaciones').get();
+            let preTotal = 0, preCount = 0;
+            let postTotal = 0, postCount = 0;
+            let usuarios = new Set();
+
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                usuarios.add(data.id_sesion);
+                if(data.tipo_evaluacion === "Pre-Test") {
+                    preTotal += data.puntaje;
+                    preCount++;
+                } else {
+                    postTotal += data.puntaje;
+                    postCount++;
+                }
+            });
+
+            const avgPre = preCount > 0 ? (preTotal / preCount).toFixed(1) : 0;
+            const avgPost = postCount > 0 ? (postTotal / postCount).toFixed(1) : 0;
+            const mejora = avgPre > 0 ? (((avgPost - avgPre) / avgPre) * 100).toFixed(0) : 0;
+
+            document.getElementById('total-p').textContent = usuarios.size;
+            document.getElementById('mejora').textContent = `+${mejora}%`;
+
+            renderChart(avgPre, avgPost);
+        }
+
+        function renderChart(pre, post) {
+            const ctx = document.getElementById('graficaResultados').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Antes de los videos (Pre)', 'Después de los videos (Post)'],
+                    datasets: [{
+                        label: 'Puntaje Promedio (sobre 7)',
+                        data: [pre, post],
+                        backgroundColor: ['#0ea5e9', '#10b981'],
+                        borderRadius: 10
+                    }]
+                },
+                options: {
+                    scales: { y: { beginAtZero: true, max: 7 } }
+                }
+            });
+        }
+
+        cargarDatos();
+    </script>
+</body>
+</html>
